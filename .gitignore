@@ -1,0 +1,22 @@
+
+# .NET build files
+bin/
+obj/
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Local configuration and secrets
+.env
+.env.*
+appsettings.Local.json
+appsettings.*.local.json
+
+# macOS files
+.DS_Store
+
+# VS Code local settings
+.vscode/

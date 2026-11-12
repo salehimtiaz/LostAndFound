@@ -1,0 +1,163 @@
+﻿@using LostAndFound.Web.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+@using LostAndFound.Web.Models
+
+@page "/"
+
+@rendermode InteractiveServer
+
+<PageTitle>Lost & Found</PageTitle>
+
+<div class="text-center mt-5">
+
+    <h1>🔎 Lost & Found</h1>
+
+    <p class="lead">
+        Find what you've lost.
+        Return what you've found.
+    </p>
+
+    <div class="mt-4">
+        <button class="btn btn-primary me-2"
+                @onclick="ReportLost">
+            Report Lost Item
+        </button>
+
+        <button class="btn btn-success"
+                @onclick="ReportFound">
+            Report Found Item
+        </button>
+    </div>
+
+    <p class="mt-4">@message</p>
+
+
+<h2 class="mt-5">Recent Items</h2>
+
+<h2 class="mt-5">Report an Item</h2>
+
+<div class="card p-4 mt-3 text-start">
+
+    <div class="mb-3">
+        <label class="form-label">Item Name</label>
+        <input class="form-control"
+               @bind="newItem.Name" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea class="form-control"
+                  @bind="newItem.Description">
+        </textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Location</label>
+        <input class="form-control"
+               @bind="newItem.Location" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Status</label>
+        <select class="form-select"
+                @bind="newItem.Status">
+            <option value="Lost">Lost</option>
+            <option value="Found">Found</option>
+        </select>
+    </div>
+
+    <button class="btn btn-primary"
+            @onclick="AddItem">
+        Submit Report
+    </button>
+
+</div>
+
+
+<div class="row mt-4">
+    @foreach (var item in items)
+    {
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5>@item.Name</h5>
+
+                    <p>@item.Description</p>
+
+                    <p>
+                        <strong>Location:</strong>
+                        @item.Location
+                    </p>
+
+                    <span class="badge @(item.Status == "Lost"
+                        ? "bg-danger" : "bg-success")">
+                        @item.Status
+                    </span>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+</div>
+
+
+@code {
+    private string message = "";
+
+    private List<LostItem> items = new();
+
+    private LostItem newItem = new();
+
+    // Load saved items when the page opens
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+        items = await db.Items
+            .OrderByDescending(item => item.DateReported)
+            .ToListAsync();
+    }
+
+    // Save a new report to the database
+    private async Task AddItem()
+    {
+        if (string.IsNullOrWhiteSpace(newItem.Name))
+        {
+            message = "Please enter an item name.";
+            return;
+        }
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+        db.Items.Add(newItem);
+
+        await db.SaveChangesAsync();
+
+        items = await db.Items
+            .OrderByDescending(item => item.DateReported)
+            .ToListAsync();
+
+        newItem = new LostItem();
+
+        message = "Item saved successfully!";
+    }
+
+    private void ReportLost()
+    {
+        newItem.Status = "Lost";
+        message = "Let's report a lost item!";
+    }
+
+    private void ReportFound()
+    {
+        newItem.Status = "Found";
+        message = "Let's report a found item!";
+    }
+}
+
